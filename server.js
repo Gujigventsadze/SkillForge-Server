@@ -30,6 +30,7 @@ const connectToDb = async () => {
 };
 connectToDb();
 
+//Registration Route
 app.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -47,10 +48,33 @@ app.post("/register", async (req, res) => {
       hashedPassword,
     ]);
 
-    res.send("User successfully registered");
+    res.status(200).send("User successfully registered");
   } catch (e) {
     console.log(e.message);
-    res.status(500).send("Internal Server Error");
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+//Login Route
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const response = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    if (response.rows.length === 0) {
+      return res.json({ message: "No User Found" });
+    } else {
+      const userPassword = response.rows[0].password;
+      const comparison = await bcrypt.compare(password, userPassword);
+      if (comparison === true) {
+        return res.status(200).json({ message: "Successfull Log In" });
+      } else {
+        return res.json({ message: "Incorrect Password" });
+      }
+    }
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
 });
 
